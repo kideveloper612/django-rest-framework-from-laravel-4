@@ -1,4 +1,4 @@
-"""tutorial URL Configuration
+"""api URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/3.1/topics/http/urls/
@@ -19,5 +19,6 @@ from django.urls import include, path
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('snippets.urls'))
+    path('', include('snippets.urls')),
+    path('default/', include('default.urls'))
 ]
