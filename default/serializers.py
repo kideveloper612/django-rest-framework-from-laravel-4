@@ -90,529 +90,529 @@ from snippets.models import UserUserGroup
 from rest_framework import serializers
 
 
-class AccessLogSerializer(serializers.HyperlinkedModelSerializer):
+class AccessLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccessLog
         fields = "__all__"
 
 
-class AccessLogArchiveSerializer(serializers.HyperlinkedModelSerializer):
+class AccessLogArchiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccessLogArchive
         fields = "__all__"
 
 
-class AddressSerializer(serializers.HyperlinkedModelSerializer):
+class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
         fields = "__all__"
 
 
-class AddressCitySerializer(serializers.HyperlinkedModelSerializer):
+class AddressCitySerializer(serializers.ModelSerializer):
     class Meta:
         model = AddressCity
         fields = "__all__"
 
 
-class AddressCountrySerializer(serializers.HyperlinkedModelSerializer):
+class AddressCountrySerializer(serializers.ModelSerializer):
     class Meta:
         model = AddressCountry
         fields = "__all__"
 
 
-class AddressDistrictSerializer(serializers.HyperlinkedModelSerializer):
+class AddressDistrictSerializer(serializers.ModelSerializer):
     class Meta:
         model = AddressDistrict
         fields = "__all__"
 
 
-class AddressStateSerializer(serializers.HyperlinkedModelSerializer):
+class AddressStateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AddressState
         fields = "__all__"
 
 
-class AdvertisingSerializer(serializers.HyperlinkedModelSerializer):
+class AdvertisingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Advertising
         fields = "__all__"
 
 
-class AdvertisingPageSerializer(serializers.HyperlinkedModelSerializer):
+class AdvertisingPageSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdvertisingPage
         fields = "__all__"
 
 
-class AdvertisingSpotSerializer(serializers.HyperlinkedModelSerializer):
+class AdvertisingSpotSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdvertisingSpot
         fields = "__all__"
 
 
-class AdvertisingTypeSerializer(serializers.HyperlinkedModelSerializer):
+class AdvertisingTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdvertisingType
         fields = "__all__"
 
 
-class AdvertisingZoneSerializer(serializers.HyperlinkedModelSerializer):
+class AdvertisingZoneSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdvertisingZone
         fields = "__all__"
 
 
-class ApiSerializer(serializers.HyperlinkedModelSerializer):
+class ApiSerializer(serializers.ModelSerializer):
     class Meta:
         model = Api
         fields = "__all__"
 
 
-class AuthGroupSerializer(serializers.HyperlinkedModelSerializer):
+class AuthGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuthGroup
         fields = "__all__"
 
 
-class AuthGroupPermissionsSerializer(serializers.HyperlinkedModelSerializer):
+class AuthGroupPermissionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuthGroupPermissions
         fields = "__all__"
 
 
-class AuthPermissionSerializer(serializers.HyperlinkedModelSerializer):
+class AuthPermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuthPermission
         fields = "__all__"
 
 
-class AuthUserSerializer(serializers.HyperlinkedModelSerializer):
+class AuthUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuthUser
         fields = "__all__"
 
 
-class AuthUserGroupsSerializer(serializers.HyperlinkedModelSerializer):
+class AuthUserGroupsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuthUserGroups
         fields = "__all__"
 
 
-class AuthUserUserPermissionsSerializer(serializers.HyperlinkedModelSerializer):
+class AuthUserUserPermissionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuthUserUserPermissions
         fields = "__all__"
 
 
-class CampaignSerializer(serializers.HyperlinkedModelSerializer):
+class CampaignSerializer(serializers.ModelSerializer):
     class Meta:
         model = Campaign
         fields = "__all__"
 
 
-class CategorySerializer(serializers.HyperlinkedModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = "__all__"
 
 
-class ConditionSerializer(serializers.HyperlinkedModelSerializer):
+class ConditionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Condition
         fields = "__all__"
 
 
-class CouponSerializer(serializers.HyperlinkedModelSerializer):
+class CouponSerializer(serializers.ModelSerializer):
     class Meta:
         model = Coupon
         fields = "__all__"
 
 
-class CouponCodeSerializer(serializers.HyperlinkedModelSerializer):
+class CouponCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CouponCode
         fields = "__all__"
 
 
-class CouponUsageSerializer(serializers.HyperlinkedModelSerializer):
+class CouponUsageSerializer(serializers.ModelSerializer):
     class Meta:
         model = CouponUsage
         fields = "__all__"
 
 
-class DeviceSerializer(serializers.HyperlinkedModelSerializer):
+class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
         fields = "__all__"
 
 
-class DjangoAdminLogSerializer(serializers.HyperlinkedModelSerializer):
+class DjangoAdminLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = DjangoAdminLog
         fields = "__all__"
 
 
-class DjangoContentTypeSerializer(serializers.HyperlinkedModelSerializer):
+class DjangoContentTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DjangoContentType
         fields = "__all__"
 
 
-class DjangoMigrationsSerializer(serializers.HyperlinkedModelSerializer):
+class DjangoMigrationsSerializer(serializers.ModelSerializer):
     class Meta:
         model = DjangoMigrations
         fields = "__all__"
 
 
-class DjangoSessionSerializer(serializers.HyperlinkedModelSerializer):
+class DjangoSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = DjangoSession
         fields = "__all__"
 
 
-class EmailSerializer(serializers.HyperlinkedModelSerializer):
+class EmailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Email
         fields = "__all__"
 
 
-class EmailContextSerializer(serializers.HyperlinkedModelSerializer):
+class EmailContextSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmailContext
         fields = "__all__"
 
 
-class EmailQueueSerializer(serializers.HyperlinkedModelSerializer):
+class EmailQueueSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmailQueue
         fields = "__all__"
 
 
-class FeedSerializer(serializers.HyperlinkedModelSerializer):
+class FeedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feed
         fields = "__all__"
 
 
-class FeedMediaSerializer(serializers.HyperlinkedModelSerializer):
+class FeedMediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = FeedMedia
         fields = "__all__"
 
 
-class FeedMessageSerializer(serializers.HyperlinkedModelSerializer):
+class FeedMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = FeedMessage
         fields = "__all__"
 
 
-class FeedMessageOptionSerializer(serializers.HyperlinkedModelSerializer):
+class FeedMessageOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = FeedMessageOption
         fields = "__all__"
 
 
-class MediaSerializer(serializers.HyperlinkedModelSerializer):
+class MediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Media
         fields = "__all__"
 
 
-class MenuSerializer(serializers.HyperlinkedModelSerializer):
+class MenuSerializer(serializers.ModelSerializer):
     class Meta:
         model = Menu
         fields = "__all__"
 
 
-class NewsSerializer(serializers.HyperlinkedModelSerializer):
+class NewsSerializer(serializers.ModelSerializer):
     class Meta:
         model = News
         fields = "__all__"
 
 
-class NewsMediaSerializer(serializers.HyperlinkedModelSerializer):
+class NewsMediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewsMedia
         fields = "__all__"
 
 
-class NotificationSerializer(serializers.HyperlinkedModelSerializer):
+class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = "__all__"
 
 
-class NotificationFilterSerializer(serializers.HyperlinkedModelSerializer):
+class NotificationFilterSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationFilter
         fields = "__all__"
 
 
-class NotificationStatusSerializer(serializers.HyperlinkedModelSerializer):
+class NotificationStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationStatus
         fields = "__all__"
 
 
-class OrderSerializer(serializers.HyperlinkedModelSerializer):
+class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = "__all__"
 
 
-class OrderDataSerializer(serializers.HyperlinkedModelSerializer):
+class OrderDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderData
         fields = "__all__"
 
 
-class OrderItemSerializer(serializers.HyperlinkedModelSerializer):
+class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = "__all__"
 
 
-class OrderLogSerializer(serializers.HyperlinkedModelSerializer):
+class OrderLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderLog
         fields = "__all__"
 
 
-class OrderPaymentSerializer(serializers.HyperlinkedModelSerializer):
+class OrderPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderPayment
         fields = "__all__"
 
 
-class OrderPaymentCallbackSerializer(serializers.HyperlinkedModelSerializer):
+class OrderPaymentCallbackSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderPaymentCallback
         fields = "__all__"
 
 
-class OrderPaymentRequestSerializer(serializers.HyperlinkedModelSerializer):
+class OrderPaymentRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderPaymentRequest
         fields = "__all__"
 
 
-class OrderStatusSerializer(serializers.HyperlinkedModelSerializer):
+class OrderStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderStatus
         fields = "__all__"
 
 
-class PartnerSerializer(serializers.HyperlinkedModelSerializer):
+class PartnerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Partner
         fields = "__all__"
 
 
-class PartnerCategorySerializer(serializers.HyperlinkedModelSerializer):
+class PartnerCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = PartnerCategory
         fields = "__all__"
 
 
-class PaymentAcquirerSerializer(serializers.HyperlinkedModelSerializer):
+class PaymentAcquirerSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentAcquirer
         fields = "__all__"
 
 
-class PaymentGatewaySerializer(serializers.HyperlinkedModelSerializer):
+class PaymentGatewaySerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentGateway
         fields = "__all__"
 
 
-class PaymentMethodSerializer(serializers.HyperlinkedModelSerializer):
+class PaymentMethodSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentMethod
         fields = "__all__"
 
 
-class PaymentStatusSerializer(serializers.HyperlinkedModelSerializer):
+class PaymentStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentStatus
         fields = "__all__"
 
 
-class PaymentTypeSerializer(serializers.HyperlinkedModelSerializer):
+class PaymentTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentType
         fields = "__all__"
 
 
-class PermissionSerializer(serializers.HyperlinkedModelSerializer):
+class PermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Permission
         fields = "__all__"
 
 
-class PlanSerializer(serializers.HyperlinkedModelSerializer):
+class PlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = Plan
         fields = "__all__"
 
 
-class PlanPaymentTypeSerializer(serializers.HyperlinkedModelSerializer):
+class PlanPaymentTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlanPaymentType
         fields = "__all__"
 
 
-class PlanResourceSerializer(serializers.HyperlinkedModelSerializer):
+class PlanResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlanResource
         fields = "__all__"
 
 
-class PlanSpotSerializer(serializers.HyperlinkedModelSerializer):
+class PlanSpotSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlanSpot
         fields = "__all__"
 
 
-class PromotionSerializer(serializers.HyperlinkedModelSerializer):
+class PromotionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Promotion
         fields = "__all__"
 
 
-class PromotionPaymentTypeSerializer(serializers.HyperlinkedModelSerializer):
+class PromotionPaymentTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PromotionPaymentType
         fields = "__all__"
 
 
-class PromotionPlanSerializer(serializers.HyperlinkedModelSerializer):
+class PromotionPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = PromotionPlan
         fields = "__all__"
 
 
-class PushQueueSerializer(serializers.HyperlinkedModelSerializer):
+class PushQueueSerializer(serializers.ModelSerializer):
     class Meta:
         model = PushQueue
         fields = "__all__"
 
 
-class ResourceSerializer(serializers.HyperlinkedModelSerializer):
+class ResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resource
         fields = "__all__"
 
 
-class RouteSerializer(serializers.HyperlinkedModelSerializer):
+class RouteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Route
         fields = "__all__"
 
 
-class SessionSerializer(serializers.HyperlinkedModelSerializer):
+class SessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session
         fields = "__all__"
 
 
-class SettingSerializer(serializers.HyperlinkedModelSerializer):
+class SettingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Setting
         fields = "__all__"
 
 
-class SmsQueueSerializer(serializers.HyperlinkedModelSerializer):
+class SmsQueueSerializer(serializers.ModelSerializer):
     class Meta:
         model = SmsQueue
         fields = "__all__"
 
 
-class SportSerializer(serializers.HyperlinkedModelSerializer):
+class SportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sport
         fields = "__all__"
 
 
-class SpotSerializer(serializers.HyperlinkedModelSerializer):
+class SpotSerializer(serializers.ModelSerializer):
     class Meta:
         model = Spot
         fields = "__all__"
 
 
-class SubscriptionSerializer(serializers.HyperlinkedModelSerializer):
+class SubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
         fields = "__all__"
 
 
-class SubscriptionLogSerializer(serializers.HyperlinkedModelSerializer):
+class SubscriptionLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubscriptionLog
         fields = "__all__"
 
 
-class TideSerializer(serializers.HyperlinkedModelSerializer):
+class TideSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tide
         fields = "__all__"
 
 
-class TideDataSerializer(serializers.HyperlinkedModelSerializer):
+class TideDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = TideData
         fields = "__all__"
 
 
-class UserSerializer(serializers.HyperlinkedModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = "__all__"
 
 
-class UserGroupSerializer(serializers.HyperlinkedModelSerializer):
+class UserGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserGroup
         fields = "__all__"
 
 
-class UserGroupMenuSerializer(serializers.HyperlinkedModelSerializer):
+class UserGroupMenuSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserGroupMenu
         fields = "__all__"
 
 
-class UserGroupPermissionSerializer(serializers.HyperlinkedModelSerializer):
+class UserGroupPermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserGroupPermission
         fields = "__all__"
 
 
-class UserPaymentSerializer(serializers.HyperlinkedModelSerializer):
+class UserPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserPayment
         fields = "__all__"
 
 
-class UserSportSerializer(serializers.HyperlinkedModelSerializer):
+class UserSportSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSport
         fields = "__all__"
 
 
-class UserSpotSerializer(serializers.HyperlinkedModelSerializer):
+class UserSpotSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSpot
         fields = "__all__"
 
 
-class UserSpotBasicPlanSerializer(serializers.HyperlinkedModelSerializer):
+class UserSpotBasicPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSpotBasicPlan
         fields = "__all__"
 
 
-class UserUserGroupSerializer(serializers.HyperlinkedModelSerializer):
+class UserUserGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserUserGroup
         fields = "__all__"
