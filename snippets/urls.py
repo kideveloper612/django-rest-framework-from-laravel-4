@@ -5,10 +5,22 @@ from snippets import views
 
 urlpatterns = [
     path('v1/address/state/list/', views.address_state_list),
-    path('v1/address/city/list/<int:state>', views.address_city_list),
-    path('v1/address/district/list/<int:city>', views.address_district_list),
-    path('v1/feed/spot/<int:spot>', views.feed_spot_list),
-    path('v1/plain/list', views.plain_list),
-    path('v1/plan/list', views.plan_list),
-    path('v1/sport/list', views.sport_list),
+    path('v1/address/city/list/<int:state>/', views.address_city_list),
+    path('v1/address/district/list/<int:city>/', views.address_district_list),
+    path('v1/feed/spot/', views.feed_spot_list),
+    path('v1/feed/spot/<int:spot>/', views.feed_spot_list_detail),
+    path('v1/plain/list/', views.plain_list),
+    path('v1/plan/list/', views.plan_list),
+    path('v1/sport/list/', views.sport_list),
+    path('v1/spot/list/', views.spot_list),
+    path('v1/spot/list/<int:spot>/', views.spot_list_detail),
+    path('v1/user/spot/<int:user>/', views.user_spot_list),
+    path('v1/user/spot/<int:user>/<int:spot>/', views.user_spot_list_detail),
+    path('v1/user/sport/<int:user>/', views.user_sport_list),
+    path('v1/user/sport/<int:user>/<int:sport>/', views.user_sport_list_detail),
+    path('v1/user/subscription/<int:user>', views.user_subscription_list),
+    path('v1/user/activation/<str:code>', views.user_activation_code),
+    path('v1/spot/condition/<int:spot>', views.spot_condition_list),
+    path('v1/spot/tide/<int:tide>', views.spot_tide_list),
+    path('v1/spot/advertising/<int:spot>', views.spot_advertising_list)
 ]
