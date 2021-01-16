@@ -101,12 +101,219 @@ from snippets.serializers import ActivationCodeSerializer
 from snippets.serializers import SpotConditionSerializer
 from snippets.serializers import SpotTideSerializer
 from snippets.serializers import SpotAdvertisingSerializer
+from snippets.serializers import SettingSerializer
+from snippets.serializers import UserSerializer
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.forms.models import model_to_dict
 import os
+from datetime import datetime
+from snippets import utils
+from django.db import connection
+
+cursor = connection.cursor()
+
+
+@api_view(['POST'])
+def coupon_check(request):
+    if request.method == 'POST':
+        # try:
+            keywords = ['user', 'plan', 'couponCode', 'paymentType']
+            check = all(item in list(request.data.keys()) for item in keywords)
+            if not check:
+                data = {
+                    "error": False,
+                    "message": "All fields are required"
+                }
+                return Response(data, status.HTTP_400_BAD_REQUEST)
+            user = User.objects.filter(id=request.data['user'])
+            if not user:
+                data = {
+                    "error": False,
+                    "message": "Unavailable user"
+                }
+                return Response(data)
+            user = user[0].id
+            plan = PromotionPlan.objects.filter(plan=request.data['plan'])
+            if not plan:
+                data = {
+                    "error": False,
+                    "message": "Unavailable plan"
+                }
+                return Response(data)
+            plan = plan[0].id
+            couponCode = request.data['couponCode']
+            paymentType = request.data['paymentType']
+            current_date = datetime.now()
+
+            coupon = CouponCode.objects.raw(
+                "SELECT * FROM coupon_code WHERE `code` = {} AND `status` = 1 AND validity_date > '{}'"
+                .format(couponCode, current_date)
+            )
+
+            if coupon and coupon[0] and coupon[0].coupon:
+                coupon_id = coupon[0].coupon.id
+                coupon_model = Coupon.objects.raw(
+                    'SELECT * FROM coupon WHERE id = {} AND start_date < "{}" AND end_date >= "{}" AND status = 1'
+                    .format(coupon_id, current_date, current_date)
+                )
+
+                if coupon_model and coupon_model[0]:
+                    promotion_id = coupon_model[0].promotion.id
+                    promotion_model = Promotion.objects.raw(
+                        'SELECT * FROM promotion WHERE id = {} AND start_date < "{}" AND end_date >= "{}" AND '
+                        'status = 1'.format(promotion_id, current_date, current_date)
+                    )
+                    if promotion_model and promotion_model[0]:
+                        promotion_plan_model = PromotionPlan.objects.filter(plan=plan)
+                        if promotion_plan_model:
+                            data = {
+                                "error": False,
+                                "isValid": True,
+                                "message": "Cupom válido"
+                            }
+
+                            coupon_usage_limit = coupon_model[0].usage_limit
+                            coupon_count = CouponUsage.objects.filter(coupon=coupon[0].coupon).__len__()
+                            coupon_usage_model = CouponUsage.objects.filter(user=user, coupon_code=coupon[0].id)
+
+                            if (coupon_usage_limit != 0 and coupon_count > coupon_usage_limit) or coupon_usage_model\
+                                    .__len__() > 0:
+                                data = {
+                                    "error": False,
+                                    "isValid": False,
+                                    "message": "Limite de uso excedido para este cupom."
+                                }
+                        else:
+                            data = {
+                                "error": True,
+                                "isValid": False,
+                                "message": "Este cupom não é válido para o plano escolhido."
+                            }
+                    else:
+                        data = {
+                            "error": True,
+                            "isValid": False,
+                            "message": "Esta promoção já foi finalizada."
+                        }
+                else:
+                    data = {
+                        "error": True,
+                        "isValid": False,
+                        "message": "Código de cupom expirado."
+                    }
+            else:
+                data = {
+                    "error": True,
+                    "isValid": False,
+                    "message": "Código de cupom inválido e/ou expirado."
+                }
+
+            return Response(data)
+
+        # except Exception as e:
+        #     if hasattr(e, 'message'):
+        #         data = {
+        #             "error": True,
+        #             "message": str(e.message)
+        #         }
+        #     else:
+        #         data = {
+        #             "error": True,
+        #             "message": str(e)
+        #         }
+        #     return Response(data, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def plan_basic2_list(request):
+    if request.method == 'GET':
+        try:
+            snippets = Plan.objects.raw("SELECT * FROM plan WHERE eh_basico = 1")
+            serializer = PlanSerializer(snippets, many=True)
+            if serializer.data and serializer.data[0]['status']:
+                data = {
+                    "error": False,
+                    "basic_plan2": serializer.data[0]
+                }
+            else:
+                data = {
+                    "error": False,
+                    "basic_plan2": "Plano Basico 2 inativo"
+                }
+            return Response(data)
+        except Exception as e:
+            if hasattr(e, 'message'):
+                data = {
+                    "error": True,
+                    "message": str(e.message)
+                }
+            else:
+                data = {
+                    "error": True,
+                    "message": str(e)
+                }
+            return Response(data, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def plan_basic_list(request):
+    if request.method == 'GET':
+        try:
+            snippets = Plan.objects.raw("SELECT * FROM plan WHERE eh_basico = 1")
+            serializer = PlanSerializer(snippets, many=True)
+            if serializer.data and serializer.data[0]['status']:
+                data = {
+                    "error": False,
+                    "is_basic_pan": False
+                }
+            else:
+                data = {
+                    "error": False,
+                    "is_basic_pan": True
+                }
+            return Response(data)
+        except Exception as e:
+            if hasattr(e, 'message'):
+                data = {
+                    "error": True,
+                    "message": str(e.message)
+                }
+            else:
+                data = {
+                    "error": True,
+                    "message": str(e)
+                }
+            return Response(data, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def setting_list(request):
+    if request.method == 'GET':
+        try:
+            snippets = Setting.objects.raw(
+
+            )
+            serializer = SettingSerializer(snippets, many=True)
+            data = {
+                "error": False,
+                "setting": serializer.data
+            }
+            return Response(data)
+        except Exception as e:
+            if hasattr(e, 'message'):
+                data = {
+                    "error": True,
+                    "message": str(e.message)
+                }
+            else:
+                data = {
+                    "error": True,
+                    "message": str(e)
+                }
+            return Response(data, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -129,19 +336,95 @@ def spot_advertising_list(request, spot):
             serializer = SpotAdvertisingSerializer(snippets, many=True)
 
             project_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-            field_names = ['file_video_mp4', 'file_video_mov', 'file_video_webm']
+            field_names = ['id', 'file_video_mp4', 'file_video_mov', 'file_video_webm']
+            advertising_id = None
             for record in serializer.data:
                 for field_name in field_names:
-                    file_path = os.path.join(project_directory, "media")
-                    file_path = os.path.join(file_path, "advertising")
-                    file_path = os.path.join(file_path, "mp4")
-                    file_path = os.path.join(file_path, record[field_name])
-                    record[field_name] = file_path
+                    if 'file_video' in field_name:
+                        file_path = os.path.join(project_directory, "media")
+                        file_path = os.path.join(file_path, "advertising")
+                        file_path = os.path.join(file_path, "mp4")
+                        file_path = os.path.join(file_path, record[field_name])
+                        record[field_name] = file_path
+                    else:
+                        advertising_id = record[field_name]
 
             data = {
                 "error": False,
                 "advertising": serializer.data
             }
+
+            current_date = datetime.now()
+            client_ip = utils.get_client_ip(request)
+
+            query = "INSERT INTO access_log (advertising, `date`, ip) VALUES (%s, %s, %s)"
+
+            cursor.execute(
+                query, [advertising_id, current_date, client_ip]
+            )
+
+            return Response(data)
+
+        except Exception as e:
+            if hasattr(e, 'message'):
+                data = {
+                    "error": True,
+                    "message": str(e.message)
+                }
+            else:
+                data = {
+                    "error": True,
+                    "message": str(e)
+                }
+            return Response(data, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def spot_advertising_user_list(request, spot, user):
+    if request.method == 'GET':
+        try:
+            snippets = Advertising.objects.raw(
+                """
+                SELECT advertising.* FROM advertising_spot
+                LEFT JOIN advertising ON advertising.id = advertising_spot.advertising
+                INNER JOIN campaign ON campaign.id = advertising.campaign
+                WHERE advertising_spot.spot = {} AND advertising.file LIKE '%%mp4%%'
+                AND campaign.starts_at <= CURDATE() AND campaign.ends_at >= CURDATE()
+                AND campaign.status = 1 AND advertising.advertising_type = 1
+                AND advertising.status = 1
+                ORDER BY RAND() LIMIT 1
+                """.format(spot)
+            )
+
+            serializer = SpotAdvertisingSerializer(snippets, many=True)
+
+            project_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+            field_names = ['id', 'file_video_mp4', 'file_video_mov', 'file_video_webm']
+            advertising_id = None
+            for record in serializer.data:
+                for field_name in field_names:
+                    if 'file_video' in field_name:
+                        file_path = os.path.join(project_directory, "media")
+                        file_path = os.path.join(file_path, "advertising")
+                        file_path = os.path.join(file_path, "mp4")
+                        file_path = os.path.join(file_path, record[field_name])
+                        record[field_name] = file_path
+                    else:
+                        advertising_id = record[field_name]
+
+            data = {
+                "error": False,
+                "advertising": serializer.data
+            }
+
+            current_date = datetime.now()
+            client_ip = utils.get_client_ip(request)
+
+            query = "INSERT INTO access_log (`user`, advertising, `date`, ip) VALUES (%s, %s, %s, %s)"
+
+            cursor.execute(
+                query, [user, advertising_id, current_date, client_ip]
+            )
 
             return Response(data)
 
@@ -292,7 +575,7 @@ def user_subscription_list(request, user):
             )
 
             field_names = ['subscription_id', 'subscription_status', 'subscription_created_at',
-                            'subscription_plan', 'subscription_price']
+                           'subscription_plan', 'subscription_price']
 
             snippets_data = []
             for p in snippets:
@@ -411,7 +694,7 @@ def user_spot_list(request, user):
             )
 
             field_names = ['partner_name', 'partner_note', 'partner_description', 'partner_site', 'partner_facebook',
-                            'partner_phone', 'partner_address', 'partner_image', 'partner_status']
+                           'partner_phone', 'partner_address', 'partner_image', 'partner_status']
 
             snippets_data = []
             for p in snippets:
@@ -458,7 +741,7 @@ def user_spot_list_detail(request, user, spot):
             )
 
             field_names = ['partner_name', 'partner_note', 'partner_description', 'partner_site', 'partner_facebook',
-                            'partner_phone', 'partner_address', 'partner_image', 'partner_status']
+                           'partner_phone', 'partner_address', 'partner_image', 'partner_status']
 
             snippets_data = []
             for p in snippets:
@@ -503,8 +786,8 @@ def spot_list_detail(request, spot):
             )
 
             field_names = ['slug', 'partner_name', 'partner_note', 'partner_description', 'partner_site',
-                            'partner_facebook',
-                            'partner_phone', 'partner_address', 'partner_image', 'partner_status']
+                           'partner_facebook',
+                           'partner_phone', 'partner_address', 'partner_image', 'partner_status']
 
             snippets_data = []
             for p in snippets:
@@ -549,8 +832,8 @@ def spot_list(request):
             )
 
             field_names = ['slug', 'partner_name', 'partner_note', 'partner_description', 'partner_site',
-                            'partner_facebook',
-                            'partner_phone', 'partner_address', 'partner_image', 'partner_status']
+                           'partner_facebook',
+                           'partner_phone', 'partner_address', 'partner_image', 'partner_status']
             snippets_data = []
             for p in snippets:
                 dict_obj = model_to_dict(p)

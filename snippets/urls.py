@@ -18,9 +18,15 @@ urlpatterns = [
     path('v1/user/spot/<int:user>/<int:spot>/', views.user_spot_list_detail),
     path('v1/user/sport/<int:user>/', views.user_sport_list),
     path('v1/user/sport/<int:user>/<int:sport>/', views.user_sport_list_detail),
-    path('v1/user/subscription/<int:user>', views.user_subscription_list),
-    path('v1/user/activation/<str:code>', views.user_activation_code),
-    path('v1/spot/condition/<int:spot>', views.spot_condition_list),
-    path('v1/spot/tide/<int:tide>', views.spot_tide_list),
-    path('v1/spot/advertising/<int:spot>', views.spot_advertising_list)
+    path('v1/user/subscription/<int:user>/', views.user_subscription_list),
+    path('v1/user/activation/<str:code>/', views.user_activation_code),
+    path('v1/spot/condition/<int:spot>/', views.spot_condition_list),
+    path('v1/spot/tide/<int:tide>/', views.spot_tide_list),
+    path('v1/spot/advertising/<int:spot>/', views.spot_advertising_list),
+    path('v1/spot/advertising/<int:spot>/<int:user>/', views.spot_advertising_user_list),
+    path('v1/setting/list/', views.setting_list),
+    path('v1/plan/isbasicplan/', views.plan_basic_list),
+    path('v1/plan/basicplan2/', views.plan_basic2_list),
+
+    path('v1/coupon/check', views.coupon_check)
 ]

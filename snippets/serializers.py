@@ -193,3 +193,14 @@ class SpotAdvertisingSerializer(serializers.ModelSerializer):
         model = Advertising
         fields = "__all__"
 
+
+class SettingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Setting
+        fields = "__all__"
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = "__all__"
