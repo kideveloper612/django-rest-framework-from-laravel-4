@@ -28,5 +28,6 @@ urlpatterns = [
     path('v1/plan/isbasicplan/', views.plan_basic_list),
     path('v1/plan/basicplan2/', views.plan_basic2_list),
 
-    path('v1/coupon/check', views.coupon_check)
+    path('v1/coupon/check', views.coupon_check),
+    path('v1/payment/buy', views.payment_buy),
 ]

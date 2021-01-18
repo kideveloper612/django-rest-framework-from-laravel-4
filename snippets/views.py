@@ -103,6 +103,8 @@ from snippets.serializers import SpotTideSerializer
 from snippets.serializers import SpotAdvertisingSerializer
 from snippets.serializers import SettingSerializer
 from snippets.serializers import UserSerializer
+from snippets.serializers import CouponSerializer
+from snippets.serializers import PromotionSerializer
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -117,9 +119,48 @@ cursor = connection.cursor()
 
 
 @api_view(['POST'])
+def payment_buy(request):
+    user = request.data['user']
+    cpf = request.data['cpf']
+    plain = request.data['plain']
+    plan = plain + request.data['plan']
+    if 'paymentType' in request.POST:
+        paymentType = request.data['paymentType']
+    else:
+        paymentType = 2
+    cardHolder = request.data['cardHolder']
+    cardNumber = request.data['cardNumber']
+    cardSecurity = request.data['cardSecurity']
+    if 'cardDate' in request.POST:
+        cardDate = request.data['cardDate']
+    else:
+        cardDate = "01/20"
+    addressStreet = request.data['addressStreet']
+    addressNumber = request.data['addressNumber']
+    addressComplement = request.data['addressComplement']
+    addressDistrict = request.data['addressDistrict']
+    addressCity = request.data['addressCity']
+    addressState = request.data['addressState']
+    addressCountry = request.data['addressCountry']
+    addressZipCode = request.data['addressZipCode']
+    couponCode = request.data['couponCode']
+    instantBuyKey = request.data['instantBuyKey']
+    spotId = request.data['spotId']
+
+    user = User.objects.filter(id=user)
+    user.update(doc_cpf=cpf)
+
+    print(plan)
+    plan = Plan.objects.filter(id=plan)
+    print(plan)
+
+    return Response("ddd")
+
+
+@api_view(['POST'])
 def coupon_check(request):
     if request.method == 'POST':
-        # try:
+        try:
             keywords = ['user', 'plan', 'couponCode', 'paymentType']
             check = all(item in list(request.data.keys()) for item in keywords)
             if not check:
@@ -147,6 +188,7 @@ def coupon_check(request):
             couponCode = request.data['couponCode']
             paymentType = request.data['paymentType']
             current_date = datetime.now()
+            flag = True
 
             coupon = CouponCode.objects.raw(
                 "SELECT * FROM coupon_code WHERE `code` = {} AND `status` = 1 AND validity_date > '{}'"
@@ -187,44 +229,101 @@ def coupon_check(request):
                                     "message": "Limite de uso excedido para este cupom."
                                 }
                         else:
+                            flag = False
                             data = {
                                 "error": True,
                                 "isValid": False,
                                 "message": "Este cupom não é válido para o plano escolhido."
                             }
                     else:
+                        flag = False
                         data = {
                             "error": True,
                             "isValid": False,
                             "message": "Esta promoção já foi finalizada."
                         }
                 else:
+                    flag = False
                     data = {
                         "error": True,
                         "isValid": False,
                         "message": "Código de cupom expirado."
                     }
             else:
+                flag = False
                 data = {
                     "error": True,
                     "isValid": False,
                     "message": "Código de cupom inválido e/ou expirado."
                 }
 
+            if flag is False:
+                return Response(data)
+
+            payment_coupon = CouponCode.objects.filter(code=couponCode)
+            if payment_coupon and payment_coupon[0]:
+                coupon_serializer = CouponSerializer(Coupon.objects.all(), many=True)
+                promotion_serializer = PromotionSerializer(Promotion.objects.all(), many=True)
+                if coupon_serializer and coupon_serializer.data:
+                    if promotion_serializer and promotion_serializer.data:
+                        payment_type = PlanPaymentType.objects.filter(payment_type=paymentType)
+                        if payment_type and payment_type[0]:
+                            data = {
+                                "error": False,
+                                "isValid": True,
+                                "message": "Pagamento válido para está promoção"
+                            }
+                            if promotion_serializer.data.__len__() > 0:
+                                promotion_value = promotion_serializer.data[0]
+                                amount_cents = 0
+                                if promotion_value['discount_type'] == '%':
+                                    amount_cents = plan[0].price - (
+                                                plan[0].price * (promotion_value['discount_amount'] / 100))
+                                elif promotion_value['discount_type'] == 'v':
+                                    amount_cents = plan[0].price - promotion_value['discount_amount']
+                                data = {
+                                    "error": False,
+                                    "message": "",
+                                    "amountInCents": amount_cents,
+                                    "name": promotion_value['name'],
+                                    "description": promotion_value['description'],
+                                    "rule": promotion_value['rule'],
+                                    "recurrences": promotion_value['recurrences'],
+                                }
+                        else:
+                            data = {
+                                "error": True,
+                                "message": "Não é possível utilizar este cupom para este metodo de pagamento"
+                            }
+                    else:
+                        data = {
+                            "error": True,
+                            "message": "Não existe promoção cadastrada para esse cupom"
+                        }
+                else:
+                    data = {
+                        "error": True,
+                        "message": "Código de cupom inválido e/ou expirado."
+                    }
+            else:
+                data = {
+                    "error": True,
+                    "message": "Limite de uso excedido para este cupom."
+                }
             return Response(data)
 
-        # except Exception as e:
-        #     if hasattr(e, 'message'):
-        #         data = {
-        #             "error": True,
-        #             "message": str(e.message)
-        #         }
-        #     else:
-        #         data = {
-        #             "error": True,
-        #             "message": str(e)
-        #         }
-        #     return Response(data, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            if hasattr(e, 'message'):
+                data = {
+                    "error": True,
+                    "message": str(e.message)
+                }
+            else:
+                data = {
+                    "error": True,
+                    "message": str(e)
+                }
+            return Response(data, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
