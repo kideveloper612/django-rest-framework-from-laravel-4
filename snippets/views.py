@@ -113,6 +113,7 @@ from django.forms.models import model_to_dict
 import os
 from datetime import datetime
 from snippets import utils
+from snippets.utils import FooException
 from django.db import connection
 
 cursor = connection.cursor()
@@ -123,38 +124,133 @@ def payment_buy(request):
     user = request.data['user']
     cpf = request.data['cpf']
     plain = request.data['plain']
-    plan = plain + request.data['plan']
+    plan = request.data['plan']
     if 'paymentType' in request.POST:
         paymentType = request.data['paymentType']
     else:
         paymentType = 2
-    cardHolder = request.data['cardHolder']
-    cardNumber = request.data['cardNumber']
-    cardSecurity = request.data['cardSecurity']
+    if 'cardHolder' in request.POST:
+        cardHolder = request.data['cardHolder']
+    else:
+        cardHolder = ""
+    if 'cardNumber' in request.POST:
+        cardNumber = request.data['cardNumber']
+    else:
+        cardNumber = ""
+    if 'cardSecurity' in request.POST:
+        cardSecurity = request.data['cardSecurity']
+    else:
+        cardSecurity = ""
     if 'cardDate' in request.POST:
         cardDate = request.data['cardDate']
     else:
         cardDate = "01/20"
-    addressStreet = request.data['addressStreet']
-    addressNumber = request.data['addressNumber']
-    addressComplement = request.data['addressComplement']
-    addressDistrict = request.data['addressDistrict']
-    addressCity = request.data['addressCity']
-    addressState = request.data['addressState']
-    addressCountry = request.data['addressCountry']
-    addressZipCode = request.data['addressZipCode']
+    if 'addressStreet' in request.POST:
+        addressStreet = request.data['addressStreet']
+    else:
+        addressStreet = ""
+    if 'addressNumber' in request.POST:
+        addressNumber = request.data['addressNumber']
+    else:
+        addressNumber = ""
+    if 'addressComplement' in request.POST:
+        addressComplement = request.data['addressComplement']
+    else:
+        addressComplement = ""
+    if 'addressDistrict' in request.POST:
+        addressDistrict = request.data['addressDistrict']
+    else:
+        addressDistrict = ""
+    if 'addressCity' in request.POST:
+        addressCity = request.data['addressCity']
+    else:
+        addressCity = ""
+    if 'addressState' in request.POST:
+        addressState = request.data['addressState']
+    else:
+        addressState = ""
+    if 'addressCountry' in request.POST:
+        addressCountry = request.data['addressCountry']
+    else:
+        addressCountry = ""
+    if 'addressZipCode' in request.POST:
+        addressZipCode = request.data['addressZipCode']
+    else:
+        addressZipCode = ""
     couponCode = request.data['couponCode']
-    instantBuyKey = request.data['instantBuyKey']
+    if 'instantBuyKey' in request.POST:
+        instantBuyKey = request.data['instantBuyKey']
+    else:
+        instantBuyKey = ""
     spotId = request.data['spotId']
 
-    user = User.objects.filter(id=user)
-    user.update(doc_cpf=cpf)
+    response = {
+        "error": False,
+        "message": ""
+    }
+    status_code = status.HTTP_200_OK
+    try:
+        user = User.objects.filter(id=user)
+        user.update(doc_cpf=cpf)
 
-    print(plan)
-    plan = Plan.objects.filter(id=plan)
-    print(plan)
+        plan = Plan.objects.get(id=plan)
 
-    return Response("ddd")
+        if not plan:
+            raise FooException("Not Found Plan")
+
+        paymentType = PaymentType.objects.get(id=paymentType)
+        if not paymentType:
+            raise FooException("Not Found PaymentType")
+
+        is_valid = utils.PaymentHelper_isValid(paymentType, plan)
+        if not is_valid['isValid']:
+            return Response(is_valid)
+
+        payment = {
+            "type": paymentType.id,
+            "number": cardNumber,
+            "holder": cardHolder,
+            "date": cardDate,
+            "security": cardSecurity,
+            "addressStreet": addressStreet,
+            "addressNumber": addressNumber,
+            "addressComplement": addressComplement,
+            "addressDistrict": addressDistrict,
+            "addressCity": addressCity,
+            "addressState": addressState,
+            "addressCountry": addressCountry,
+            "addressZipCode": addressZipCode,
+            "instantBuyKey": instantBuyKey,
+            "spotId": spotId,
+        }
+
+        if instantBuyKey == "":
+            checkPayment = utils.PaymentHelper_checkPayment(payment)
+            if not checkPayment['isValid']:
+                response = checkPayment
+
+    except FooException as e:
+        print(e)
+        status_code = status.HTTP_202_ACCEPTED
+        response.update({
+            "error": True,
+            "message": e.foo
+        })
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response.update({
+                "error": True,
+                "message": str(e.message)
+            })
+        else:
+            response.update({
+                "error": True,
+                "message": str(e)
+            })
+
+    finally:
+        return Response(response, status_code)
 
 
 @api_view(['POST'])
