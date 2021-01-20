@@ -177,7 +177,10 @@ def payment_buy(request):
         addressZipCode = request.data['addressZipCode']
     else:
         addressZipCode = ""
-    couponCode = request.data['couponCode']
+    if 'couponCode' in request.POST:
+        couponCode = request.data['couponCode']
+    else:
+        couponCode = ""
     if 'instantBuyKey' in request.POST:
         instantBuyKey = request.data['instantBuyKey']
     else:
@@ -192,6 +195,9 @@ def payment_buy(request):
     try:
         user = User.objects.filter(id=user)
         user.update(doc_cpf=cpf)
+
+        if not user:
+            raise FooException("Not Found User")
 
         plan = Plan.objects.get(id=plan)
 
@@ -228,6 +234,11 @@ def payment_buy(request):
             checkPayment = utils.PaymentHelper_checkPayment(payment)
             if not checkPayment['isValid']:
                 response = checkPayment
+
+        if couponCode != "":
+            response = utils.PaymentHelper_couponPayment(couponCode, user[0], plan, payment)
+        else:
+            response = utils.PaymentHelper_defaultPayment(user[0], plan, payment)
 
     except FooException as e:
         print(e)
@@ -314,7 +325,7 @@ def coupon_check(request):
                             }
 
                             coupon_usage_limit = coupon_model[0].usage_limit
-                            coupon_count = CouponUsage.objects.filter(coupon=coupon[0].coupon).__len__()
+                            coupon_count = CouponUsage.objects.filter(coupon=coupon_model[0].coupon).__len__()
                             coupon_usage_model = CouponUsage.objects.filter(user=user, coupon_code=coupon[0].id)
 
                             if (coupon_usage_limit != 0 and coupon_count > coupon_usage_limit) or coupon_usage_model\
