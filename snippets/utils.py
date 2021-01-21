@@ -243,8 +243,8 @@ def PaymentHelper_couponPayment(request, couponCode, user, plan, payment):
                 transactionKey = None
                 instantBuyKey = None
 
-                if payment['type'] == 2:
-                    
+                # if payment['type'] == 2:
+
 
         i += 1
 
