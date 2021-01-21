@@ -113,7 +113,8 @@ from django.forms.models import model_to_dict
 import os
 from datetime import datetime
 from snippets import utils
-from snippets.utils import FooException
+from snippets import helper
+from snippets.helper import FooException
 from django.db import connection
 
 cursor = connection.cursor()
@@ -132,15 +133,15 @@ def payment_buy(request):
     if 'cardHolder' in request.POST:
         cardHolder = request.data['cardHolder']
     else:
-        cardHolder = ""
+        cardHolder = None
     if 'cardNumber' in request.POST:
         cardNumber = request.data['cardNumber']
     else:
-        cardNumber = ""
+        cardNumber = None
     if 'cardSecurity' in request.POST:
         cardSecurity = request.data['cardSecurity']
     else:
-        cardSecurity = ""
+        cardSecurity = None
     if 'cardDate' in request.POST:
         cardDate = request.data['cardDate']
     else:
@@ -148,43 +149,43 @@ def payment_buy(request):
     if 'addressStreet' in request.POST:
         addressStreet = request.data['addressStreet']
     else:
-        addressStreet = ""
+        addressStreet = None
     if 'addressNumber' in request.POST:
         addressNumber = request.data['addressNumber']
     else:
-        addressNumber = ""
+        addressNumber = None
     if 'addressComplement' in request.POST:
         addressComplement = request.data['addressComplement']
     else:
-        addressComplement = ""
+        addressComplement = None
     if 'addressDistrict' in request.POST:
         addressDistrict = request.data['addressDistrict']
     else:
-        addressDistrict = ""
+        addressDistrict = None
     if 'addressCity' in request.POST:
         addressCity = request.data['addressCity']
     else:
-        addressCity = ""
+        addressCity = None
     if 'addressState' in request.POST:
         addressState = request.data['addressState']
     else:
-        addressState = ""
+        addressState = None
     if 'addressCountry' in request.POST:
         addressCountry = request.data['addressCountry']
     else:
-        addressCountry = ""
+        addressCountry = None
     if 'addressZipCode' in request.POST:
         addressZipCode = request.data['addressZipCode']
     else:
-        addressZipCode = ""
+        addressZipCode = None
     if 'couponCode' in request.POST:
         couponCode = request.data['couponCode']
     else:
-        couponCode = ""
+        couponCode = None
     if 'instantBuyKey' in request.POST:
         instantBuyKey = request.data['instantBuyKey']
     else:
-        instantBuyKey = ""
+        instantBuyKey = None
     spotId = request.data['spotId']
 
     response = {
@@ -208,7 +209,7 @@ def payment_buy(request):
         if not paymentType:
             raise FooException("Not Found PaymentType")
 
-        is_valid = utils.PaymentHelper_isValid(paymentType, plan)
+        is_valid = helper.PaymentHelper_isValid(paymentType, plan)
         if not is_valid['isValid']:
             return Response(is_valid)
 
@@ -236,7 +237,7 @@ def payment_buy(request):
                 response = checkPayment
 
         if couponCode != "":
-            response = utils.PaymentHelper_couponPayment(couponCode, user[0], plan, payment)
+            response = utils.PaymentHelper_couponPayment(request, couponCode, user[0], plan, payment)
         else:
             response = utils.PaymentHelper_defaultPayment(user[0], plan, payment)
 
@@ -561,7 +562,7 @@ def spot_advertising_list(request, spot):
             }
 
             current_date = datetime.now()
-            client_ip = utils.get_client_ip(request)
+            client_ip = helper.get_client_ip(request)
 
             query = "INSERT INTO access_log (advertising, `date`, ip) VALUES (%s, %s, %s)"
 
@@ -624,7 +625,7 @@ def spot_advertising_user_list(request, spot, user):
             }
 
             current_date = datetime.now()
-            client_ip = utils.get_client_ip(request)
+            client_ip = helper.get_client_ip(request)
 
             query = "INSERT INTO access_log (`user`, advertising, `date`, ip) VALUES (%s, %s, %s, %s)"
 

@@ -87,16 +87,13 @@ from snippets.models import UserSpot
 from snippets.models import UserSpotBasicPlan
 from snippets.models import UserUserGroup
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.utils import timezone
 
-
-class FooException(Exception):
-    def __init__(self, foo):
-        self.foo = foo
+from snippets import helper
 
 
-def PaymentHelper_couponPayment(couponCode, user, plan, payment):
+def PaymentHelper_couponPayment(request, couponCode, user, plan, payment):
     response = {
         "error": True,
         "message": "Falha ao realizar pagamento!"
@@ -109,115 +106,158 @@ def PaymentHelper_couponPayment(couponCode, user, plan, payment):
         }
         return response
 
-    isValid = PaymentHelper_isValidToPromotion(payment['type'], couponCode)
-    if not isValid['isValid']:
-        return response
+    # isValid = helper.PaymentHelper_isValidToPromotion(payment['type'], couponCode)
+    # if not isValid['isValid']:
+    #     return response
+    #
+    # isValid = helper.CouponHelper_isValid(couponCode, plan, user)
+    # if not isValid['isValid']:
+    #     return response
 
-    isValid = CouponHelper_isValid(couponCode, plan, user)
-    if not isValid['isValid']:
-        return response
-
-    calculated = CouponHelper_calculate(couponCode, plan)
+    calculated = helper.CouponHelper_calculate(couponCode, plan)
 
     i = 0
-    # while True:
-    #     if i < calculated['recurrences']:
-    #         break
+    while True:
+        order = Order(
+            order_status=OrderStatus.objects.first(),
+            user=User.objects.get(pk=user.id),
+            created_at=timezone.now(),
+            total=plan.price,
+            total_paid=plan.price,
+            total_pending=int(calculated['amountInCents']),
+            total_discounted=plan.price - int(calculated['amountInCents']),
+            note="Pedido realizado por " + request.user.email,
+            ip_address=helper.get_client_ip(request)
+        )
+        order.save()
+
+        orderLog = OrderLog(
+            order=order,
+            created_at=timezone.now(),
+            description="Pedido criado!",
+            ip_address=helper.get_client_ip(request)
+        )
+        orderLog.save()
+
+        orderData = OrderData(
+            order=order,
+            user_name=user.name,
+            user_email=user.email,
+            user_cell_phone=user.cell_phone,
+            user_doc_cpf=user.doc_cpf,
+            user_address_street=payment['addressStreet'],
+            user_address_number=payment['addressNumber'],
+            user_address_complement=payment['addressComplement'],
+            user_address_district=payment['addressDistrict'],
+            user_address_city=payment['addressCity'],
+            user_address_state=payment['addressState'],
+            user_address_country=payment['addressCountry'],
+            user_address_zip_code=payment['addressZipCode']
+        )
+        orderData.save()
+
+        orderItem = OrderItem(
+            order=order,
+            plan=plan,
+            quantity=1,
+            price=plan.price
+        )
+        orderItem.save()
+
+        orderPayment = OrderPayment(
+            order=order,
+            payment_gateway=PaymentGateway.objects.first(),
+            payment_status=PaymentStatus.objects.first(),
+            created_at=timezone.now()
+        )
+        if payment['type'] == 1:
+            orderPayment.credit_card_date = datetime.strptime("01/{}".format(payment['date']), "%d/%m/%y")
+        orderPayment.save()
+
+        options = {
+            "orderId": order.id,
+            "orderPaymentId": orderPayment.id,
+            "amountInCents": calculated['amountInCents'],
+            "isAuth": False
+        }
+
+        useGateway = True
+        if payment['type'] == 1:
+            paymentType = PaymentType.objects.get(pk=payment['type'])
+            paymentMethod = PaymentMethod.objects.get(integration_code=paymentType.integration_code)
+
+            if paymentMethod.tax * 100 > options['amountInCents']:
+                useGateway = False
+
+            if i == 0:
+                orderPayment.order = order
+                orderPayment.payment_method = paymentMethod
+                orderPayment.payment_gateway = PaymentGateway.objects.first()
+                orderPayment.amount = options['amountInCents']
+                orderPayment.captured_date = timezone.now()
+                orderPayment.due_date = timezone.now()
+                orderPayment.payment_status = PaymentStatus.objects.first()
+                orderPayment.note = "Não foi realizada requisição para mundipagg pois o valor do final do pedido é " \
+                                    "menor que a taxa do boleto "
+                order.order_status = OrderStatus.objects.first()
+                order.total_pending = 0
+                orderItem.applied = 1
+
+                order.save()
+                orderItem.save()
+                orderPayment.save()
+
+                helper.CouponHelper_register(orderItem, couponCode, user)
+
+                plan.couponCode = couponCode
+
+                helper.Subscription_updateSubscription(request, user, plan)
+            else:
+                if plan.free_days > 0 and helper.Subscription_hasSubscription(request, user) and \
+                        helper.CouponHelper_isAccumulative(couponCode):
+                    orderPayment.due_date = timezone.now() + timedelta(plan.free_days + plan.days * i)
+                else:
+                    orderPayment.due_date = timezone.now() + timedelta(plan.days * i)
+
+                order.order_status = OrderStatus.objects.first()
+                order.save()
+                orderPayment.save()
+
+            if i == 0:
+                response = {
+                    "error": False,
+                    "message": "",
+                    "order": order
+                }
+
+        if i == 0 and useGateway is True:
+            helperResponse = helper.MundiPaggHelper_doPayment(user, payment, options)
+            if not isinstance(helperResponse, list):
+                instantBuyKey = None
+                maskedCreditCardNumber = None
+                slipOurNumber = None
+                slipBarCode = None
+                slipUrl = None
+                authorizationCode = None
+                creditCardBrand = None
+                transactionKey = None
+                instantBuyKey = None
+
+                if payment['type'] == 2:
+                    
+
+        i += 1
+
+        if calculated['recurrences'] is None:
+            break
+        elif calculated['recurrences'] is not None and i < int(calculated['recurrences']):
+            break
 
     return response
 
 
 def PaymentHelper_defaultPayment(user, plan, payment):
     pass
-
-
-def CouponHelper_isValid(coupon_code, plan, user):
-    try:
-        coupon_Code = CouponCode.objects.filter(code=coupon_code, status=1, validity_date__gt=timezone.now())
-        if not coupon_Code:
-            raise FooException("Código de cupom inválido e/ou expirado.")
-
-        coupon = Coupon.objects.filter(id=coupon_Code[0].coupon, end_date__gte=timezone.now(), start_date__lte=timezone.now(), status=1)
-        if not coupon:
-            raise FooException("Código de cupom expirado.")
-
-        promotion = Promotion.objects.filter(id=coupon[0].promotion, end_date__gte=timezone.now(), start_date__lt=timezone.now(), status=1)
-        if not promotion:
-            raise FooException("Esta promoção já foi finalizada.")
-
-        promotionPlan = PromotionPlan.objects.filter(plan=plan.id, promotion=promotion[0].id)
-        if not promotionPlan:
-            raise FooException("Este cupom não é válido para o plano escolhido.")
-
-        coupon_usage_limit = coupon_Code[0].usage_limit
-        coupon_count = CouponUsage.objects.filter(coupon=coupon_Code[0].coupon).__len__()
-        coupon_usage_model = CouponUsage.objects.filter(user=user, coupon_code=coupon[0].id)
-
-        response = {
-            "error": False,
-            "isValid": True,
-            "message": "Cupom válido"
-        }
-
-        if (coupon_usage_limit != 0 and coupon_count > coupon_usage_limit) or coupon_usage_model \
-                .__len__() > 0:
-            response = {
-                "error": False,
-                "isValid": False,
-                "message": "Limite de uso excedido para este cupom."
-            }
-
-    except FooException as e:
-        response = {
-            "error": True,
-            "isValid": False,
-            "message": e.foo
-        }
-
-    finally:
-        return response
-
-
-def CouponHelper_calculate(couponCode, plan):
-    response = {}
-    try:
-        coupon_code = CouponCode.objects.get(code=couponCode)
-        if not coupon_code:
-            raise FooException("Erro ao calcular desconto")
-
-        coupon = Coupon.objects.get(id=coupon_code['id'])
-        if not coupon:
-            raise FooException("Erro ao calcular desconto")
-
-        promotion = Promotion.objects.get(id=coupon['id'])
-        if not promotion:
-            raise FooException("Erro ao calcular desconto")
-
-        if promotion['discount_type'] == "%":
-            response = {
-                "amountInCents": plan['price'] - (plan['price'] * (promotion['discount_amount']/100))
-            }
-        elif promotion['discount_type'] == "v":
-            response = {
-                "amountInCents": plan['price'] - promotion['discount_amount']
-            }
-        else:
-            response = {
-                "amountInCents": ""
-            }
-
-        response.update({
-            "name": promotion['name'],
-            "description": promotion['description'],
-            "rule": promotion['rule'],
-            "recurrences": promotion['recurrences'],
-        })
-
-    except FooException as e:
-        response = e.foo
-
-    finally:
-        return response
 
 
 def PaymentHelper_checkPayment(payment):
@@ -281,71 +321,3 @@ def PaymentHelper_checkPayment(payment):
     return data
 
 
-def PaymentHelper_isValid(paymentType, plan):
-    data = {
-        "error": False,
-        "isValid": True,
-        "message": ""
-    }
-    try:
-        paymentType_model = PaymentType.objects.filter(id=paymentType.id, status=1)
-
-        if not paymentType_model:
-            raise FooException("Método de pagamento inválido e/ou inativo.")
-
-        planPaymentType_model = PlanPaymentType.objects.filter(plan=plan.id)
-        if not planPaymentType_model:
-            raise FooException("Este plano não aceita este metódo de pagamento")
-
-        data.update({
-            "message": "Pagamento válido"
-        })
-
-    except FooException as e:
-        data.update({
-            "message": e.foo
-        })
-
-    finally:
-        return data
-
-
-def PaymentHelper_isValidToPromotion(paymentType, couponCode):
-    response = {
-        "error": False,
-        "isValid": True,
-        "message": "Pagamento válido para está promoção"
-    }
-    try:
-        couponCode = CouponCode.objects.get(code=couponCode)
-        if not couponCode:
-            raise FooException("Código de cupom inválido e/ou expirado.")
-
-        if not Coupon.objects.all():
-            raise FooException("cupom inválido e/ou expirado.")
-
-        if not Promotion.objects.all():
-            raise FooException("Não existe promoção cadastrada para esse cupom")
-
-        promotionPaymentType = PromotionPaymentType.objects.filter(payment_type=paymentType)
-        if not promotionPaymentType:
-            raise FooException("Não é possível utilizar este cupom para este metodo de pagamento")
-
-    except FooException as e:
-        response.update({
-            "error": True,
-            "isValid": False,
-            "message": e.foo
-        })
-
-    finally:
-        return response
-
-
-def get_client_ip(request):
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
