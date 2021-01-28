@@ -106,13 +106,13 @@ def PaymentHelper_couponPayment(request, couponCode, user, plan, payment):
         }
         return response
 
-    # isValid = helper.PaymentHelper_isValidToPromotion(payment['type'], couponCode)
-    # if not isValid['isValid']:
-    #     return response
-    #
-    # isValid = helper.CouponHelper_isValid(couponCode, plan, user)
-    # if not isValid['isValid']:
-    #     return response
+    isValid = helper.PaymentHelper_isValidToPromotion(payment['type'], couponCode)
+    if not isValid['isValid']:
+        return response
+
+    isValid = helper.CouponHelper_isValid(couponCode, plan, user)
+    if not isValid['isValid']:
+        return response
 
     calculated = helper.CouponHelper_calculate(couponCode, plan)
 

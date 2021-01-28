@@ -1,0 +1,23 @@
+'id'
+User has no field named 'cellPhone'
+User has no field named 'sendEmail'
+Field 'send_email' expected a number but got ''.
+Field 'send_email' expected a number but got ''.
+Field 'send_email' expected a number but got ''.
+Field 'send_push' expected a number but got ''.
+'QuerySet' object has no attribute 'save'
+(1062, "Duplicate entry '1' for key 'facebook_id'")
+Unknown password hashing algorithm 'md5'. Did you specify it in the PASSWORD_HASHERS setting?
+Unknown password hashing algorithm 'md5'. Did you specify it in the PASSWORD_HASHERS setting?
+(1406, "Data too long for column 'password' at row 1")
+(1406, "Data too long for column 'password' at row 1")
+(1406, "Data too long for column 'password' at row 1")
+(1406, "Data too long for column 'password' at row 1")
+(1406, "Data too long for column 'password' at row 1")
+(1406, "Data too long for column 'password' at row 1")
+Unicode-objects must be encoded before hashing
+Unicode-objects must be encoded before hashing
+Unicode-objects must be encoded before hashing
+Unicode-objects must be encoded before hashing
+(1062, "Duplicate entry '12' for key 'facebook_id'")
+(1062, "Duplicate entry '12' for key 'facebook_id'")

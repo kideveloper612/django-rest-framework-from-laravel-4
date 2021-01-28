@@ -111,13 +111,340 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.forms.models import model_to_dict
 import os
+from random import randint
 from datetime import datetime
 from snippets import utils
 from snippets import helper
 from snippets.helper import FooException
 from django.db import connection
+from django.contrib.auth.hashers import make_password
+from django.utils import timezone
 
 cursor = connection.cursor()
+
+
+@api_view(['POST'])
+def user_login(request):
+    response = {
+        "error": False,
+        "message": ""
+    }
+    statusCode = status.HTTP_200_OK
+
+    try:
+        keywords = ['email', 'password']
+        check = all(item in list(request.data.keys()) for item in keywords)
+        if not check:
+            response = {
+                "error": False,
+                "message": "All fields are required"
+            }
+
+            statusCode = status.HTTP_400_BAD_REQUEST
+
+            return
+
+        email = request.data['email']
+        password = request.data['password']
+
+        user = User.objects.get(email=email)
+
+        if user:
+            if user.status == 2:
+                response.update({
+                    "user": user
+                })
+            else:
+                user = User.objects.get(email=email, password=make_password(password, salt=None, hasher='unsalted_md5'))
+
+                if user:
+                    from django.core import serializers
+
+                    response.update({
+                        "user": serializers.serialize("json", user)
+                    })
+                else:
+                    response.update({
+                        "error": True,
+                        "message": "Senha incorreta"
+                    })
+        else:
+            response.update({
+                "error": True,
+                "message": "Usuário não encontrado"
+            })
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+
+        statusCode = status.HTTP_400_BAD_REQUEST
+
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def user_update_sport(request):
+    response = {
+        "error": False,
+        "message": ""
+    }
+    statusCode = status.HTTP_200_OK
+
+    try:
+        keywords = ['user', 'sport']
+        check = all(item in list(request.data.keys()) for item in keywords)
+        if not check:
+            response = {
+                "error": False,
+                "message": "All fields are required"
+            }
+
+            statusCode = status.HTTP_400_BAD_REQUEST
+
+            return
+
+        user = request.data['user']
+        sport = request.data['sport']
+
+        userSport = UserSport.objects.filter(user=user, sport=sport)
+
+        if userSport:
+            userSport.delete()
+            response.update({
+                "message": "Favorito removido"
+            })
+        else:
+            user = User.objects.get(pk=user)
+            sport = Sport.objects.get(pk=sport)
+            UserSport(
+                user=user,
+                sport=sport
+            ).save()
+
+            response.update({
+                "message": "Favorito adicionado"
+            })
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+
+        statusCode = status.HTTP_400_BAD_REQUEST
+
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def user_update_spot(request):
+    response = {
+        "error": False,
+        "message": ""
+    }
+    statusCode = status.HTTP_200_OK
+
+    try:
+        keywords = ['user', 'spot']
+        check = all(item in list(request.data.keys()) for item in keywords)
+        if not check:
+            response = {
+                "error": False,
+                "message": "All fields are required"
+            }
+
+            statusCode = status.HTTP_400_BAD_REQUEST
+
+            return
+
+        user = request.data['user']
+        spot = request.data['spot']
+
+        userSpot = UserSpot.objects.filter(user=user, spot=spot)
+
+        if userSpot:
+            userSpot.delete()
+            response.update({
+                "message": "Favorito removido"
+            })
+        else:
+            user = User.objects.get(pk=user)
+            spot = Spot.objects.get(pk=spot)
+            UserSpot(
+                user=user,
+                spot=spot
+            ).save()
+
+            response.update({
+                "message": "Favorito adicionado"
+            })
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+
+        statusCode = status.HTTP_400_BAD_REQUEST
+
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def user_update(request):
+    response = {
+        "error": False,
+        "message": ""
+    }
+    statusCode = status.HTTP_200_OK
+
+    try:
+        keywords = ['id', 'facebookId', 'name', 'email', 'cellPhone', 'password', 'sendEmail', 'sendPush', 'sendSms']
+        check = all(item in list(request.data.keys()) for item in keywords)
+        if not check:
+            response = {
+                "error": False,
+                "message": "All fields are required"
+            }
+
+            statusCode = status.HTTP_400_BAD_REQUEST
+
+            return
+
+        if 'status' in request.POST:
+            status_value = request.data['status']
+        else:
+            status_value = 1
+
+        id_value = request.data['id']
+        facebookId = request.data['facebookId']
+        name = request.data['name']
+        email = request.data['email']
+        cellPhone = request.data['cellPhone']
+        password = request.data['password']
+        sendEmail = request.data['sendEmail']
+        sendPush = request.data['sendPush']
+        sendSms = request.data['sendSms']
+
+        if id_value:
+            user = User.objects.filter(email=email)
+            if user:
+                response.update({
+                    "message": "Este email já está sendo utilizado!"
+                })
+            else:
+                user = User.objects.filter(pk=id_value)
+
+                email = email.strip()
+                user.update(
+                    updated_at=timezone.now(),
+                    facebook_id=facebookId,
+                    name=name,
+                    email=email,
+                    cell_phone=cellPhone,
+                    password=password,
+                    send_email=sendEmail,
+                    send_push=sendPush,
+                    send_sms=sendSms
+                )
+
+                response.update({
+                    "message": "Dados Atualizados"
+                })
+        else:
+            user = User.objects.filter(email=email)
+            if user:
+                response.update({
+                    "message": "Este email já está sendo utilizado!"
+                })
+            else:
+                exitLoop = False
+
+                activationCode = 0
+
+                while exitLoop:
+                    activationCode = randint(0000000000, 9999999999)
+                    user = User.objects.get(activation_code=activationCode)
+                    if user:
+                        exitLoop = False
+                    else:
+                        exitLoop = True
+
+                if email:
+                    user = User(
+                        created_at=timezone.now(),
+                        updated_at=timezone.now(),
+                        facebook_id=facebookId,
+                        name=name,
+                        email=email,
+                        cell_phone=cellPhone,
+                        password=make_password(password, salt=None, hasher='unsalted_md5'),
+                        send_email=sendEmail,
+                        send_push=sendPush,
+                        send_sms=sendSms,
+                        status=status_value
+                    )
+
+                    if not user.facebook_id:
+                        user.activation_code = None
+                    else:
+                        user.activation_code = activationCode
+
+                    user.save()
+
+                    response.update({
+                        "message": "Cadastro realizado com sucesso!"
+                    })
+
+                else:
+                    response.update({
+                        "message": "O campo de email não pode estar em branco!"
+                    })
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+
+        statusCode = status.HTTP_400_BAD_REQUEST
+
+        current_path = os.path.join(os.path.join(os.path.dirname(__file__), "storage"), "user.txt")
+        with open(file=current_path, encoding="utf-8", mode="a") as file:
+            file.write(str(e) + "\n")
+
+    finally:
+        return Response(response, statusCode)
 
 
 @api_view(['POST'])
@@ -300,14 +627,14 @@ def coupon_check(request):
 
             coupon = CouponCode.objects.raw(
                 "SELECT * FROM coupon_code WHERE `code` = {} AND `status` = 1 AND validity_date > '{}'"
-                .format(couponCode, current_date)
+                    .format(couponCode, current_date)
             )
 
             if coupon and coupon[0] and coupon[0].coupon:
                 coupon_id = coupon[0].coupon.id
                 coupon_model = Coupon.objects.raw(
                     'SELECT * FROM coupon WHERE id = {} AND start_date < "{}" AND end_date >= "{}" AND status = 1'
-                    .format(coupon_id, current_date, current_date)
+                        .format(coupon_id, current_date, current_date)
                 )
 
                 if coupon_model and coupon_model[0]:
@@ -329,7 +656,7 @@ def coupon_check(request):
                             coupon_count = CouponUsage.objects.filter(coupon=coupon_model[0].coupon).__len__()
                             coupon_usage_model = CouponUsage.objects.filter(user=user, coupon_code=coupon[0].id)
 
-                            if (coupon_usage_limit != 0 and coupon_count > coupon_usage_limit) or coupon_usage_model\
+                            if (coupon_usage_limit != 0 and coupon_count > coupon_usage_limit) or coupon_usage_model \
                                     .__len__() > 0:
                                 data = {
                                     "error": False,
@@ -386,7 +713,7 @@ def coupon_check(request):
                                 amount_cents = 0
                                 if promotion_value['discount_type'] == '%':
                                     amount_cents = plan[0].price - (
-                                                plan[0].price * (promotion_value['discount_amount'] / 100))
+                                            plan[0].price * (promotion_value['discount_amount'] / 100))
                                 elif promotion_value['discount_type'] == 'v':
                                     amount_cents = plan[0].price - promotion_value['discount_amount']
                                 data = {
@@ -500,9 +827,7 @@ def plan_basic_list(request):
 def setting_list(request):
     if request.method == 'GET':
         try:
-            snippets = Setting.objects.raw(
-
-            )
+            snippets = Setting.objects.all()
             serializer = SettingSerializer(snippets, many=True)
             data = {
                 "error": False,
@@ -1022,7 +1347,7 @@ def spot_list_detail(request, spot):
             return Response(data, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def spot_list(request):
     if request.method == 'GET':
         try:
@@ -1065,6 +1390,128 @@ def spot_list(request):
                     "message": str(e)
                 }
             return Response(data, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    elif request.method == 'POST':
+        statusCode = status.HTTP_200_OK
+        response = {
+            "error": False,
+            "response": []
+        }
+        try:
+            paginate = 50
+
+            state = request.POST['state']
+            city = request.POST['city']
+            district = request.POST['district']
+
+            spotList = Spot.objects.raw(
+                """
+                SELECT DISTINCT spot.*, route.friendly_url AS slug, partner.id AS partner, 
+                partner.name AS partner_name, partner.note AS partner_note, partner.description AS partner_description,
+                partner.site AS partner_site, partner.facebook AS partner_facebook,
+                partner.phone AS partner_phone, partner.address AS partner_address,
+                partner.image AS partner_image, partner.status AS partner_status
+                FROM spot
+                LEFT JOIN partner ON partner.id = spot.partner
+                INNER JOIN route ON route.spot = spot.id
+                WHERE spot.status = 1
+                ORDER BY spot.order ASC
+                """
+            )
+
+            if district is not None:
+                spotList = Spot.objects.raw(
+                    """
+                    SELECT DISTINCT spot.*, route.friendly_url AS slug, partner.id AS partner, 
+                    partner.name AS partner_name, partner.note AS partner_note, partner.description AS partner_description,
+                    partner.site AS partner_site, partner.facebook AS partner_facebook,
+                    partner.phone AS partner_phone, partner.address AS partner_address,
+                    partner.image AS partner_image, partner.status AS partner_status
+                    FROM spot
+                    LEFT JOIN partner ON partner.id = spot.partner
+                    INNER JOIN route ON route.spot = spot.id
+                    INNER JOIN address ON address.id = spot.address
+                    INNER JOIN address_district ON address_district.id = address.address_district
+                    WHERE spot.status = 1 AND address_district.id = {}
+                    ORDER BY spot.order ASC
+                    """.format(district)
+                )
+            else:
+                if city is not None:
+                    spotList = Spot.objects.raw(
+                        """
+                        SELECT DISTINCT spot.*, route.friendly_url AS slug, partner.id AS partner, 
+                        partner.name AS partner_name, partner.note AS partner_note, partner.description AS partner_description,
+                        partner.site AS partner_site, partner.facebook AS partner_facebook,
+                        partner.phone AS partner_phone, partner.address AS partner_address,
+                        partner.image AS partner_image, partner.status AS partner_status
+                        FROM spot
+                        LEFT JOIN partner ON partner.id = spot.partner
+                        INNER JOIN route ON route.spot = spot.id
+                        INNER JOIN address ON address.id = spot.address
+                        INNER JOIN address_district ON address_district.id = address.address_district
+                        WHERE spot.status = 1 AND address_district.address_city = {}
+                        ORDER BY spot.order ASC
+                        """.format(city)
+                    )
+                else:
+                    if state is not None:
+                        spotList = Spot.objects.raw(
+                            """
+                            SELECT DISTINCT spot.*, route.friendly_url AS slug, partner.id AS partner, 
+                            partner.name AS partner_name, partner.note AS partner_note, partner.description AS partner_description,
+                            partner.site AS partner_site, partner.facebook AS partner_facebook,
+                            partner.phone AS partner_phone, partner.address AS partner_address,
+                            partner.image AS partner_image, partner.status AS partner_status
+                            FROM spot
+                            LEFT JOIN partner ON partner.id = spot.partner
+                            INNER JOIN route ON route.spot = spot.id
+                            INNER JOIN address ON address.id = spot.address
+                            INNER JOIN address_district ON address_district.id = address.address_district
+                            WHERE spot.status = 1 AND address_district.address_state = {}
+                            ORDER BY spot.order ASC
+                            """.format(state)
+                        )
+
+            field_names = ['slug', 'partner_name', 'partner_note', 'partner_description', 'partner_site',
+                           'partner_facebook',
+                           'partner_phone', 'partner_address', 'partner_image', 'partner_status']
+
+            newSpotList = []
+            for p in spotList:
+                dict_obj = model_to_dict(p)
+                for name in field_names:
+                    dict_obj.update({name: getattr(p, name)})
+                newSpotList.append(dict_obj)
+
+            snippets_data = []
+            for spot in newSpotList:
+                if 'stream' in spot:
+                    spot['stream'] = spot['stream']
+                else:
+                    spot['stream'] = spot['m3u8']
+
+                if request.META['HTTP_USER_AGENT'] == "ios":
+                    if 'http' not in spot.stream:
+                        spot['stream'] = 'http://' + spot['stream']
+                    if 'http' not in spot.m3u8:
+                        spot['m3u8'] = 'http://' + spot['m3u8']
+
+                snippets_data = spot
+
+            response.update({
+                "response": snippets_data
+            })
+
+        except Exception as e:
+            statusCode = status.HTTP_400_BAD_REQUEST
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+
+        finally:
+            return Response(response, statusCode)
 
 
 @api_view(['GET'])

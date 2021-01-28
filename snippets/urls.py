@@ -12,6 +12,7 @@ urlpatterns = [
     path('v1/plain/list/', views.plain_list),
     path('v1/plan/list/', views.plan_list),
     path('v1/sport/list/', views.sport_list),
+    path('v1/spot/list', views.spot_list),
     path('v1/spot/list/', views.spot_list),
     path('v1/spot/list/<int:spot>/', views.spot_list_detail),
     path('v1/user/spot/<int:user>/', views.user_spot_list),
@@ -29,5 +30,8 @@ urlpatterns = [
     path('v1/plan/basicplan2/', views.plan_basic2_list),
 
     path('v1/coupon/check', views.coupon_check),
-    path('v1/payment/buy', views.payment_buy),
+    path('v1/user/update', views.user_update),
+    path('v1/user/updateSpot', views.user_update_spot),
+    path('v1/user/updateSport', views.user_update_sport),
+    path('v1/user/login', views.user_login),
 ]

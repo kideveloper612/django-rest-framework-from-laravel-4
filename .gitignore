@@ -1,2 +1,7 @@
 .idea
 venv
+*/__pycache__
+api/__pycache__
+contact/__pycache__
+default/__pycache__
+snippets/__pycache__
