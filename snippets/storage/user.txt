@@ -21,3 +21,5 @@ Unicode-objects must be encoded before hashing
 Unicode-objects must be encoded before hashing
 (1062, "Duplicate entry '12' for key 'facebook_id'")
 (1062, "Duplicate entry '12' for key 'facebook_id'")
+Field 'send_email' expected a number but got ''.
+Field 'send_push' expected a number but got ''.

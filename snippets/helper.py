@@ -98,6 +98,15 @@ class FooException(Exception):
         self.foo = foo
 
 
+def DeviceBusiness_getByCode(code):
+    device = Device.objects.get(code=code)
+
+    if device:
+        return device
+
+    return False
+
+
 def MundiPaggHelper_doPayment(user, payment, options):
     response = True
     try:

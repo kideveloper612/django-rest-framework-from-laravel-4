@@ -34,4 +34,6 @@ urlpatterns = [
     path('v1/user/updateSpot', views.user_update_spot),
     path('v1/user/updateSport', views.user_update_sport),
     path('v1/user/login', views.user_login),
+    path('v1/user/logout', views.user_logout),
+    path('v1/user/device', views.user_device),
 ]

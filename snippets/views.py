@@ -124,10 +124,116 @@ cursor = connection.cursor()
 
 
 @api_view(['POST'])
+def user_device(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "user": []
+    }
+
+    try:
+        user = ""
+        token = ""
+        appVersion = ""
+
+        if 'user' in request.data:
+            user = request.data['user']
+        if 'code' in request.data:
+            code = request.data['code']
+        else:
+            raise FooException("O código do dispositivo é requerido!")
+        if 'token' in request.data:
+            token = request.data['token']
+        if 'appVersion' in request.data:
+            appVersion = request.data['appVersion']
+
+        device = Device.objects.get(code=code)
+        if not device:
+            device = Device()
+
+        if not device.token and not token:
+            token = code
+
+        device.os = request.user.is_authenticated
+        if user:
+            device.user = user
+        if code:
+            device.code = code
+        if token:
+            device.token = token
+        if appVersion:
+            device.app_version = appVersion
+        device.status = 1
+
+        device.save()
+
+        if device.user:
+            subscription = Subscription.objects.get(user=device.user)
+
+            if subscription and
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def user_logout(request):
+    statusCode = status.HTTP_200_OK
+
+    responseData = {
+        "error": False,
+        "user": []
+    }
+
+    try:
+        deviceCode = ""
+        if 'device-code' in request.headers:
+            deviceCode = request.headers['device-code']
+        elif 'deviceCode' in request.data:
+            deviceCode = request.data['deviceCode']
+
+        device = Device.objects.get(code=deviceCode)
+
+        if device:
+            device.user = None
+            device.save()
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            responseData = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            responseData = {
+                "error": True,
+                "message": str(e)
+            }
+
+        statusCode = status.HTTP_400_BAD_REQUEST
+
+    finally:
+        return Response(responseData, statusCode)
+
+
+@api_view(['POST'])
 def user_login(request):
     response = {
         "error": False,
-        "message": ""
+        "user": []
     }
     statusCode = status.HTTP_200_OK
 
@@ -147,21 +253,20 @@ def user_login(request):
         email = request.data['email']
         password = request.data['password']
 
-        user = User.objects.get(email=email)
-
+        user = User.objects.filter(email=email)
         if user:
-            if user.status == 2:
+            if user[0].status == 2:
+                serializer = UserSerializer(user, many=True)
                 response.update({
-                    "user": user
+                    "user": serializer.data
                 })
             else:
-                user = User.objects.get(email=email, password=make_password(password, salt=None, hasher='unsalted_md5'))
+                user = User.objects.filter(email=email, password=make_password(password, salt=None, hasher='unsalted_md5'))
+                serializer = UserSerializer(user, many=True)
 
                 if user:
-                    from django.core import serializers
-
                     response.update({
-                        "user": serializers.serialize("json", user)
+                        "user": serializer.data
                     })
                 else:
                     response.update({
@@ -366,7 +471,7 @@ def user_update(request):
                     name=name,
                     email=email,
                     cell_phone=cellPhone,
-                    password=password,
+                    password=make_password(password, salt=None, hasher='unsalted_md5'),
                     send_email=sendEmail,
                     send_push=sendPush,
                     send_sms=sendSms
