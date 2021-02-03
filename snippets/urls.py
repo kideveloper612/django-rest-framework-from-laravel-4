@@ -36,4 +36,11 @@ urlpatterns = [
     path('v1/user/login', views.user_login),
     path('v1/user/logout', views.user_logout),
     path('v1/user/device', views.user_device),
+    path('v1/user/loginwithfacebook', views.user_loginwithfacebook),
+    path('v1/user/register', views.user_register),
+    path('v1/user/checkEmail', views.user_checkEmail),
+    path('v1/user/changePassword', views.user_changePassword),
+    path('v1/email/sendActivationCode', views.email_sendActivationCode),
+    path('v1/notification/send', views.notification_send),
+    path('v1/notification/register', views.notification_register),
 ]

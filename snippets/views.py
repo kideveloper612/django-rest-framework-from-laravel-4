@@ -105,6 +105,7 @@ from snippets.serializers import SettingSerializer
 from snippets.serializers import UserSerializer
 from snippets.serializers import CouponSerializer
 from snippets.serializers import PromotionSerializer
+from snippets.serializers import PushQueueSe
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -115,12 +116,310 @@ from random import randint
 from datetime import datetime
 from snippets import utils
 from snippets import helper
+from snippets.business.SubscriptionBusiness import SubscriptionBusinesss
+from snippets.business.DeviceBusiness import DeviceBusiness
 from snippets.helper import FooException
 from django.db import connection
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
+from django.db.models import Q
 
 cursor = connection.cursor()
+
+
+@api_view(['POST'])
+def notification_send(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "message": ""
+    }
+
+    try:
+        user = None
+        code = None
+        pushId = None
+
+        if 'user' in request.data:
+            user = request.data['user']
+        if 'code' in request.data:
+            code = request.data['code']
+        if 'pushId' in request.data:
+            pushId = request.data['pushId']
+
+        pushQueue = PushQueue.objects.get(id=pushId)
+        pushQueue.read_at = timezone.now()
+        pushQueue.save()
+
+        response.update({
+            "push": pushQueueSe
+        })
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def notification_send(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "message": ""
+    }
+
+    try:
+        alert = None
+        registrationId = None
+
+        if 'alert' in request.data:
+            alert = request.data['alert']
+        if 'registrationId' in request.data:
+            registrationId = request.data['registrationId']
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def email_sendActivationCode(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "message": ""
+    }
+
+    try:
+        user = None
+
+        if 'user' in request.data:
+            user = request.data['user']
+
+        user = User.objects.filter(pk=user)
+
+        if user:
+            user = user[0]
+            url = "http://www.surfconnect.com.br/api-app/user/activate/"
+            body = "Código de Ativação: {} \n\n".format(user.activation_code)
+            body += "Entre no endereço {} e informe o código acima.\n\n".format("http://www.surfconnect.com.br/")
+            body += "Ou entre direto no link abaixo:\n"
+            body += "{}code/{} \n\n".format(url, user.activation_code)
+            body += "Aloha! \n"
+            body += "Equipe SurfConnect \n"
+
+            cursor.execute(
+                """
+                INSERT INTO `email_queue` (`user`, created_at, `from`, `to`, cc, `subject`, `body`, `status`)
+                VALUES (%d, "%s", "%s", "%s", "%s", "%s", "%s", %d);
+                """ % (user.id, timezone.now().strftime('%Y-%m-%d %H:%M:%S'), "donotreply@surfconnect.com.br",
+                       user.email, user.email, "SurfConnect - Email de Ativação", body, 1)
+            )
+
+            response.update({
+                "message": "Email de ativação enviado!"
+            })
+
+        else:
+            response.update({
+                "message": "Não foi possivel enviar email de ativação!"
+            })
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def user_changePassword(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "message": ""
+    }
+
+    try:
+        id = None
+        password = None
+
+        if 'id' in request.data:
+            id = request.data['id']
+        if 'password' in request.data:
+            password = request.data['password']
+
+        user = User.objects.get(id=id)
+
+        if user:
+            user.password = make_password(password, salt=None, hasher='unsalted_md5')
+            user.status = 1
+            user.save()
+
+            response.update({
+                "message": "Senha alterada!"
+            })
+
+        else:
+            response.update({
+                "message": "Não foi possivel alterar sua senha!"
+            })
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def user_checkEmail(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "message": ""
+    }
+
+    try:
+        response = {
+            "error": False,
+            "message": "Developing..."
+        }
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def user_register(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "user": []
+    }
+
+    try:
+        response = {
+            "error": False,
+            "message": "Developing..."
+        }
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def user_loginwithfacebook(request):
+    facebookId = ""
+    email = ""
+    if 'facebookId' in request.data:
+        facebookId = request.data['facebookId']
+    if 'email' in request.data:
+        email = request.data['email']
+
+    statusCode = status.HTTP_200_OK
+    response = {
+        "error": False,
+        "user": []
+    }
+
+    try:
+        if email:
+            user = User.objects.filter(Q(facebook_id=facebookId) | Q(email=email))
+        else:
+            user = User.objects.filter(facebook_id=facebookId)
+
+        if user:
+            response.update({
+                "user": UserSerializer(user, many=True).data
+            })
+        else:
+            response = {
+                "error": True,
+                "message": "Usuário não encontrado"
+            }
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
 
 
 @api_view(['POST'])
@@ -129,7 +428,7 @@ def user_device(request):
 
     response = {
         "error": False,
-        "user": []
+        "message": ""
     }
 
     try:
@@ -169,9 +468,10 @@ def user_device(request):
         device.save()
 
         if device.user:
-            subscription = Subscription.objects.get(user=device.user)
-
-            if subscription and
+            subscription = SubscriptionBusinesss.getValidByUserId(device.user)
+            if subscription and subscription.session_limit:
+                if subscription.session_limit < DeviceBusiness.countActiveByUserId(subscription.user):
+                    DeviceBusiness.inactivateAllExceptCode(device.code)
 
     except Exception as e:
         if hasattr(e, 'message'):
@@ -261,7 +561,8 @@ def user_login(request):
                     "user": serializer.data
                 })
             else:
-                user = User.objects.filter(email=email, password=make_password(password, salt=None, hasher='unsalted_md5'))
+                user = User.objects.filter(email=email,
+                                           password=make_password(password, salt=None, hasher='unsalted_md5'))
                 serializer = UserSerializer(user, many=True)
 
                 if user:
