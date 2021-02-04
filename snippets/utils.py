@@ -97,12 +97,6 @@ from snippets import helper
 from snippets.helppers.RequestHelper import RequestHelper
 
 
-def getView(index):
-
-
-    return view[index]
-
-
 def verifyCameras(planListing, userId):
     view = 1
 
