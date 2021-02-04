@@ -98,6 +98,14 @@ class FooException(Exception):
         self.foo = foo
 
 
+def PositionSearch(search, string):
+    result = string[5:].find(search)
+
+    if result == -1:
+        return 0
+    return result + 5
+
+
 def DeviceBusiness_getByCode(code):
     device = Device.objects.get(code=code)
 

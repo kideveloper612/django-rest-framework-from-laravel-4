@@ -87,10 +87,103 @@ from snippets.models import UserSpot
 from snippets.models import UserSpotBasicPlan
 from snippets.models import UserUserGroup
 
+from snippets.serializers import SubscriptionSerializer
+
 from datetime import timedelta, datetime
 from django.utils import timezone
-
+from django.forms.models import model_to_dict
+from urllib.parse import urlparse
 from snippets import helper
+from snippets.helppers.RequestHelper import RequestHelper
+
+
+def getView(index):
+
+
+    return view[index]
+
+
+def verifyCameras(planListing, userId):
+    view = 1
+
+    daysReniew = planListing.credits_reniew
+    minDate = timezone.now() - timedelta(days=daysReniew)
+    minDateF = minDate.strftime("%Y-%m-%d %H:%M:%S")
+    userSpot = UserSpotBasicPlan.objects.filter(user=userId, accessed_at__gt=minDateF)
+    qtdCameras = planListing.quantidade_usos - len(userSpot)
+
+    if qtdCameras < 0:
+        view = 0
+
+    return view
+
+
+def subscription(user):
+    try:
+        subscription_result = Subscription.objects.raw(
+            """
+            SELECT subscription.id, subscription.status, subscription.created_at, plan.id
+            AS plan, plan.price FROM subscription
+            INNER JOIN plan ON plan.id=subscription.plan
+            LEFT JOIN order_item ON order_item.id=subscription.order_item
+            LEFT JOIN order_payment ON order_payment.order=order_item.order
+            WHERE subscription.user=%s AND subscription.expiration_at>="%s";
+            """ % (user, timezone.now() - timedelta(days=4))
+        )
+
+        return SubscriptionSerializer(subscription_result, many=True).data
+
+    except Exception as e:
+        print(e)
+        return None
+
+
+def getBasicPlan():
+    response = None
+    try:
+        response = Plan.objects.get(eh_basico=1)
+    except Exception as e:
+        print(e)
+    finally:
+        return response
+
+
+def getSpotStatusProcessing(spotId):
+    response = None
+    try:
+        spotForCamerite = Spot.objects.get(pk=spotId)
+        urlSpot = spotForCamerite.player_embed_url
+        pathUrl = urlparse(urlSpot).path
+
+        positionStr = helper.PositionSearch(search="embed", string=pathUrl)
+        substrEmbed = pathUrl[positionStr + 7:]
+        positionStr = substrEmbed.find("/")
+
+        if positionStr == -1:
+            camerite = ""
+        else:
+            camerite = substrEmbed[0:positionStr]
+
+        urlCamerite = 'https://surfconnect.camerite.com/webapi/v1/'
+        tokenCamerite = 'platform_14ce18a7-32a9-4d48-b775-aaf72a5dcb31'
+
+        urlCamerite += "cameras/{}?token={}".format(camerite, tokenCamerite)
+
+        requestHelper = RequestHelper(urlCamerite, 'get')
+        requestHelper.sendRequest()
+        body = requestHelper.getBody(True)
+
+        if not body:
+            response.update({
+                "message": 0
+            })
+        if body:
+            response = body[0]['status']
+
+    except Exception as e:
+        print(e)
+    finally:
+        return response
 
 
 def PaymentHelper_couponPayment(request, couponCode, user, plan, payment):

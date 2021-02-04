@@ -105,7 +105,8 @@ from snippets.serializers import SettingSerializer
 from snippets.serializers import UserSerializer
 from snippets.serializers import CouponSerializer
 from snippets.serializers import PromotionSerializer
-from snippets.serializers import PushQueueSe
+from snippets.serializers import PushQueueSerializer
+from snippets.serializers import UserSpotBasicPlanSerializer
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -113,7 +114,7 @@ from rest_framework import status
 from django.forms.models import model_to_dict
 import os
 from random import randint
-from datetime import datetime
+from datetime import datetime, timedelta
 from snippets import utils
 from snippets import helper
 from snippets.business.SubscriptionBusiness import SubscriptionBusinesss
@@ -128,7 +129,475 @@ cursor = connection.cursor()
 
 
 @api_view(['POST'])
-def notification_send(request):
+def v2_user_device(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "data": [],
+        "status": {
+            "success": True,
+            "message": ""
+        }
+    }
+
+    try:
+        user = None
+        code = None
+        token = None
+        appVersion = None
+
+        if 'user' in request.data:
+            user = request.data['user']
+        if 'code' in request.data:
+            code = request.data['code']
+        if 'token' in request.data:
+            token = request.data['token']
+        if 'appVersion' in request.data:
+            appVersion = request.data['appVersion']
+
+        if not code:
+            raise FooException("Device code is required!")
+
+        device = Device.objects.filter(code=code)
+
+        if device:
+            device = device[0]
+        else:
+            device = Device()
+
+        if user:
+            device.user = user
+        device.os = request.META['HTTP_USER_AGENT']
+        if token:
+            device.token = token
+        device.code = code
+        if appVersion:
+            device.app_version = appVersion
+        device.status = 1
+        device.save()
+
+        response['data'] = model_to_dict(device)
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def app_checkVersionByCode(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "status": False
+    }
+
+    try:
+        versionCode = None
+
+        if 'versionCode' in request.data:
+            versionCode = int(request.data['versionCode'])
+
+        if request.META['HTTP_USER_AGENT'] == "ios":
+            response["status"] = True
+        else:
+            if versionCode and versionCode > 159:
+                response["status"] = True
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['GET'])
+def apple_allowed(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "status": False
+    }
+
+    try:
+        pass
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def user_spot_pb2(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "subscription": []
+    }
+
+    try:
+        spotId = None
+        userId = None
+
+        if 'spotId' in request.data:
+            spotId = request.data['spotId']
+        if 'userId' in request.data:
+            userId = request.data['userId']
+
+        plan = utils.getBasicPlan()
+
+        if not plan.status:
+            statusCode = status.HTTP_400_BAD_REQUEST
+
+            response = {
+                "error": True,
+                "message": "Accesso não permitido neste plano basico",
+                "view": [],
+                "embedUrl": []
+            }
+        else:
+            ipAddrees = ""
+            if spotId and not userId:
+                ipAddrees = request.META.get('REMOTE_ADDR')
+
+            hasSubscription = utils.subscription(userId)
+            if hasSubscription and hasSubscription[0]['id']:
+                response['subscription'] = 1
+            else:
+                response["subscription"] = 0
+
+                today = timezone.now()
+                daysReniew = plan.credits_reniew
+                planReniew = timezone.now() + timedelta(days=daysReniew)
+
+                if ipAddrees != "":
+                    userNotLogged = User.objects.filter(ip_address=ipAddrees)
+
+                    if not userNotLogged:
+                        userNLogged = User(
+                            created_at=today.strftime("%Y-%m-%d %H:%M:%S"),
+                            status=1,
+                            credits=plan['quantidade_usos'],
+                            pbasic_reniew=planReniew.strftime("%Y-%m-%d %H:%M:%S"),
+                            ip_address=ipAddrees
+                        )
+
+                        userNLogged.save()
+                        userId = userNLogged.id
+
+                    else:
+                        userId = UserSerializer(userNotLogged, many=True).data[0]['id']
+
+                if utils.getSpotStatusProcessing(spotId):
+                    userSpotBasicPlan = UserSpotBasicPlan.objects.filter(user=userId, spot=spotId)
+                    user = User.objects.get(pk=userId)
+
+                    if user.pbasic_reniew and not user.credits:
+                        user.pbasic_reniew = planReniew.strftime("%Y-%m-%d %H:%M:%S")
+                        user.credits = plan['quantidade_usos']
+                        user.save()
+
+                    spot = Spot.objects.get(pk=spotId)
+                    embedUrl = spot.player_embed_url
+                    embedUrl = embedUrl.replace("download=true", "download=false")
+                    embedUrl = embedUrl.replace("timeline=true", "timeline=false")
+                    response['embedUrl'] = embedUrl
+
+                    if user.credits > 0:
+                        verifyCam = utils.verifyCameras(plan, userId)
+                        view = ['Credits Only', 'Embed Plano Basico 2'][verifyCam]
+                        response["view"] = view
+
+                        if not userSpotBasicPlan:
+                            if verifyCam:
+                                userSpotInsert = UserSpotBasicPlan(
+                                    user=userId,
+                                    spot=spotId,
+                                    accessed_at=timezone.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    is_credited=0
+                                )
+
+                                userSpotInsert.save()
+
+                        elif userSpotBasicPlan and userSpotBasicPlan[0].is_credited == 1:
+                            if verifyCam:
+                                userSpotBasicPlan[0].is_credited = 0
+                                userSpotBasicPlan[0].accessed_at = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
+                                userSpotBasicPlan[0].save()
+
+                        elif userSpotBasicPlan and userSpotBasicPlan[0].is_credited == 0:
+                            accessedAt = userSpotBasicPlan[0].accessed_at
+                            timeDiference = (timezone.now() - accessedAt).days
+
+                            if timeDiference > 0:
+                                user.credits = user.credits - 1
+                                user.save()
+
+                                userSpotBasicPlan[0].accessed_at = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
+                                userSpotBasicPlan[0].save()
+
+                            view = 'Embed Plano Basico 2'
+                            response["view"] = view
+
+                        elif userSpotBasicPlan and userSpotBasicPlan[0].is_credited == 2:
+                            view = 'Credits Only'
+
+                            accessedAt = userSpotBasicPlan[0].accessed_at
+                            timeDiference = (timezone.now() - accessedAt).days
+
+                            if timeDiference > 0:
+                                view = 'Embed Plano Basico 2'
+
+                            response["view"] = view
+
+                    else:
+                        if userSpotBasicPlan and (userSpotBasicPlan[0].is_credited == 0
+                                                  or userSpotBasicPlan[0].is_credited == 2):
+
+                            accessedAt = userSpotBasicPlan[0].accessed_at
+                            timeDiference = (timezone.now() - accessedAt).days
+
+                            if timeDiference > 0:
+                                view = 'Embed Plano Basico 2'
+                            else:
+                                view = 'Credits Only'
+
+                        else:
+                            view = 'Credits Only'
+
+                        response["view"] = view
+
+                else:
+                    view = 'Camera Offline'
+                    response["view"] = view
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def spot_spotstatus(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "message": ""
+    }
+
+    try:
+        if 'spotId' in request.data:
+            spotId = request.data['spotId']
+
+            spotStatus = utils.getSpotStatusProcessing(spotId)
+
+            response.update({
+                "message": spotStatus
+            })
+        else:
+            statusCode = status.HTTP_400_BAD_REQUEST
+            response.update({
+                "error": True,
+                "message": "Deve entrar o identificador do usuario"
+            })
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def user_creditsrenew(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "user_credits": None
+    }
+
+    try:
+        if 'user' in request.data:
+            user_id = request.data['user']
+
+            user = User.objects.get(pk=user_id)
+            if user.pbasic_reniew:
+                response.update({
+                    "user_credits": user.pbasic_reniew.strftime('%d %B %Y')
+                })
+
+        else:
+            statusCode = status.HTTP_400_BAD_REQUEST
+
+            response = {
+                "error": True,
+                "message": "Deve entrar o identificador do usuario"
+            }
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def user_credits(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "user_credits": []
+    }
+
+    try:
+        if 'user' in request.data:
+            user_id = request.data['user']
+
+            user = User.objects.get(pk=user_id)
+            response.update({
+                "user_credits": model_to_dict(user)['credits']
+            })
+
+        else:
+            statusCode = status.HTTP_400_BAD_REQUEST
+            response = {
+                "error": True,
+                "message": "Deve entrar o identificador do usuario"
+            }
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def user_freespots(request):
+    statusCode = status.HTTP_200_OK
+
+    response = {
+        "error": False,
+        "free_spots": []
+    }
+
+    try:
+        if 'user' in request.data:
+            user_id = request.data['user']
+
+            plan = Plan.objects.get(eh_basico=1)
+            daysReniew = plan.credits_reniew
+            minDate = timezone.now() - timedelta(days=daysReniew)
+            minDateF = minDate.strftime("%Y-%m-%d %H:%M:%S")
+
+            userSpotBasicPlan = UserSpotBasicPlan.objects.filter(user=user_id, accessed_at__gt=minDateF)
+            qtdCameras = plan.quantidade_usos - len(userSpotBasicPlan)
+
+            if qtdCameras < 0:
+                qtdCameras = 0
+
+            response.update({
+                "free_spots": qtdCameras
+            })
+
+        else:
+            statusCode = status.HTTP_400_BAD_REQUEST
+
+            response = {
+                "error": True,
+                "message": "Deve entrar o identificador do usuario"
+            }
+
+    except Exception as e:
+        if hasattr(e, 'message'):
+            response = {
+                "error": True,
+                "message": str(e.message)
+            }
+        else:
+            response = {
+                "error": True,
+                "message": str(e)
+            }
+        statusCode = status.HTTP_400_BAD_REQUEST
+    finally:
+        return Response(response, statusCode)
+
+
+@api_view(['POST'])
+def notification_register(request):
     statusCode = status.HTTP_200_OK
 
     response = {
@@ -152,9 +621,10 @@ def notification_send(request):
         pushQueue.read_at = timezone.now()
         pushQueue.save()
 
-        response.update({
-            "push": pushQueueSe
-        })
+        response = {
+            "error": False,
+            "push": model_to_dict(pushQueue)
+        }
 
     except Exception as e:
         if hasattr(e, 'message'):

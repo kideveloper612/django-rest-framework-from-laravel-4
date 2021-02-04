@@ -90,6 +90,12 @@ from snippets.models import UserUserGroup
 from rest_framework import serializers
 
 
+class UserSpotBasicPlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSpotBasicPlan
+        fields = "__all__"
+
+
 class AddressStateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AddressState
@@ -215,4 +221,10 @@ class CouponSerializer(serializers.ModelSerializer):
 class PromotionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Promotion
+        fields = "__all__"
+
+
+class PushQueueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PushQueue
         fields = "__all__"

@@ -43,4 +43,19 @@ urlpatterns = [
     path('v1/email/sendActivationCode', views.email_sendActivationCode),
     path('v1/notification/send', views.notification_send),
     path('v1/notification/register', views.notification_register),
+
+    path('v1/user/freespots', views.user_freespots),
+    path('v1/user/credits', views.user_credits),
+    path('v1/user/creditsrenew', views.user_creditsrenew),
+    path('v1/spot/spotstatus', views.spot_spotstatus),
+    path('v1/user/spot/pb2', views.user_spot_pb2),
+
+
+
+    path('apple/allowed', views.apple_allowed),
+    path('app/checkVersionByCode', views.app_checkVersionByCode),
+
+
+    path('v2/user/device', views.v2_user_device),
+    path('v2/device/register', views.v2_user_device),
 ]
