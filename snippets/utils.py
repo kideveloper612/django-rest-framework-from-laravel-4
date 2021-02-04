@@ -406,5 +406,3 @@ def PaymentHelper_checkPayment(payment):
             })
 
     return data
-
-
